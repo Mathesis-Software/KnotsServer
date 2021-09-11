@@ -1,8 +1,12 @@
-from django.http import JsonResponse
-from django.shortcuts import render
+import json
 
 from spherogram.links import Link
 from spherogram.links.orthogonal import OrthogonalLinkDiagram
+
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 def code2diagram(code):
     link = Link(code)
@@ -27,6 +31,20 @@ def code2diagram(code):
             'isClosed': True
         }]
     }
+
+@csrf_exempt
+@require_POST
+def diagram4Code(request):
+    debug = False
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        debug = data.get("debug") or False
+        return JsonResponse(code2diagram(data["code"]))
+    except Exception as error:
+        if debug:
+            return JsonResponse({'error': 'Internal error: %s' % error})
+        else:
+            return JsonResponse({'error': 'Cannot convert code to a diagram'})
 
 def index(request, code):
     try:
