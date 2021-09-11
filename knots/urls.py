@@ -16,7 +16,5 @@ Including another URLconf
 from django.urls import include, path
 
 urlpatterns = [
-    #path('admin/', admin.site.urls),
-    path('converter/', include('api.urls')),
     path('api/', include('api.urls')),
 ]

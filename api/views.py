@@ -47,10 +47,3 @@ def diagram4Code(request):
             return {'error': 'Internal error: %s' % error}
         else:
             return {'error': 'Cannot convert code to a diagram'}
-
-@json_response
-def index(request, code):
-    try:
-        return code2diagram(code)
-    except:
-        return {'error': 'Invalid DT code'}
