@@ -1,4 +1,4 @@
-import json
+import json, re
 
 from spherogram.links import Link
 from spherogram.links.orthogonal import OrthogonalLinkDiagram
@@ -7,8 +7,25 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from .decorators import json_response
+from .models import Knot
 
 def code2diagram(code):
+    # remove extra whitespaces
+    code = ' '.join(code.split())
+    # keep name for use in diagram json
+    name = code
+
+    # if code is known by database, replace it with dt code
+    try:
+        knot = Knot.objects.get(identifier=code.lower())
+        code = knot.dtcode
+    except:
+        pass
+
+    # replace sequence of integers by spherogram-supported DT code notation
+    if re.match(r'^[-\d ]+$', code):
+        code = 'DT:[(' + code.replace(' ', ',') + ')]'
+
     link = Link(code)
     diagram = OrthogonalLinkDiagram(link)
     data = diagram.plink_data()
@@ -24,7 +41,7 @@ def code2diagram(code):
 
     return {
         'type': 'diagram',
-        'name': code,
+        'name': name,
         'components': [{
             'vertices': [[index, pt[0], pt[1]] for (pt, index) in zip(points, range(len(points)))],
             'crossings': [{'down': c[0], 'up': c[1]} for c in crossings],

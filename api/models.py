@@ -1,3 +1,5 @@
 from django.db import models
 
-# Create your models here.
+class Knot(models.Model):
+    identifier = models.CharField(max_length=16, unique=True)
+    dtcode = models.CharField(max_length=128)
