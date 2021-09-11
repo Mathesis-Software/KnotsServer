@@ -47,3 +47,10 @@ def diagram4Code(request):
             return {'error': 'Internal error: %s' % error}
         else:
             return {'error': 'Cannot convert code to a diagram'}
+
+@json_response
+def test(request, code):
+    try:
+        return code2diagram(code)
+    except Exception as error:
+        return {'error': '%s' % error}
