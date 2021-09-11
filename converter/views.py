@@ -20,7 +20,7 @@ def code2diagram(code):
 
     return {
         'type': 'diagram',
-        'name': 'Generated',
+        'name': code,
         'components': [{
             'vertices': [[index, pt[0], pt[1]] for (pt, index) in zip(points, range(len(points)))],
             'crossings': [{'down': c[0], 'up': c[1]} for c in crossings],
