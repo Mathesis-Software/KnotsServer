@@ -15,6 +15,22 @@ def code2diagram(code):
     # keep name for use in diagram json
     name = code
 
+    # code is the DT code
+    if re.match(r'^[-\d ]+$', code):
+        intcode = [int(num) for num in code.split()]
+        # validate DT code
+        indices = set()
+        for num in intcode:
+            if num == 0:
+                raise Exception('0 in DT code')
+            if num % 2 == 1:
+                raise Exception('Odd number %d in DT code' % num)
+            if abs(num) in indices:
+                raise Exception('Duplicate %d in DT code' % num)
+            if abs(num) > len(intcode) * 2:
+                raise Exception('Invalid value %d in DT code of length %d' % (num, len(intcode)))
+            indices.add(abs(num))
+
     # if code is known by database, replace it with dt code
     try:
         knot = Knot.objects.get(identifier=code.lower())
