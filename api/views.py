@@ -18,10 +18,20 @@ def code2diagram(code):
     # keep name for use in diagram json
     name = code
 
-    # code is the DT code
-    if re.match(r'^[-\d ]+$', code):
+    # DT code validation
+    if re.match(r'^[a-zA-Z]+$', code):
+        # letter DT code
+        letters = set()
+        for let in code:
+            if ord(let.lower()) - ord('a') >= len(code):
+                raise ManagedException('Letter %s is out of range A-%s' % (let, chr(ord('A') + len(code) - 1)))
+            if let.lower() in letters:
+                raise ManagedException('Duplicate letter %s in DT code' % let)
+            letters.add(let.lower())
+
+    elif re.match(r'^[-\d ]+$', code):
+        # numeric DT code
         intcode = [int(num) for num in code.split()]
-        # validate DT code
         indices = set()
         for num in intcode:
             if num == 0:
@@ -34,15 +44,20 @@ def code2diagram(code):
                 raise ManagedException('Invalid value %d in DT code of length %d' % (num, len(intcode)))
             indices.add(abs(num))
 
-    # if code is known by database, replace it with dt code
+    # if code is regognized as knot name, replace it with dt code
     try:
         knot = Knot.objects.get(identifier=code.lower())
         code = knot.dtcode
     except:
         pass
 
-    # replace sequence of integers by spherogram-supported DT code notation
-    if re.match(r'^[-\d ]+$', code):
+    if re.match(r'^[a-zA-Z]+$', code):
+        # replace letter DT code by spherogram-supported DT code notation
+        def num(letter):
+            return ord(letter) - ord('a') + 1 if letter.islower() else ord('A') - ord(letter) - 1
+        code = 'DT:[(' + ','.join([str(2 * num(letter)) for letter in code]) + ')]'
+    elif re.match(r'^[-\d ]+$', code):
+        # replace sequence of integers by spherogram-supported DT code notation
         code = 'DT:[(' + code.replace(' ', ',') + ')]'
 
     link = Link(code)
