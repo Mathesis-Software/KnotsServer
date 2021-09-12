@@ -9,6 +9,9 @@ from django.views.decorators.http import require_POST
 from .decorators import json_response
 from .models import Knot
 
+class ManagedException(Exception):
+    pass
+
 def code2diagram(code):
     # remove extra whitespaces
     code = ' '.join(code.split())
@@ -22,13 +25,13 @@ def code2diagram(code):
         indices = set()
         for num in intcode:
             if num == 0:
-                raise Exception('0 in DT code')
+                raise ManagedException('0 in DT code')
             if num % 2 == 1:
-                raise Exception('Odd number %d in DT code' % num)
+                raise ManagedException('Odd number %d in DT code' % num)
             if abs(num) in indices:
-                raise Exception('Duplicate %d in DT code' % num)
+                raise ManagedException('Duplicate %d in DT code' % num)
             if abs(num) > len(intcode) * 2:
-                raise Exception('Invalid value %d in DT code of length %d' % (num, len(intcode)))
+                raise ManagedException('Invalid value %d in DT code of length %d' % (num, len(intcode)))
             indices.add(abs(num))
 
     # if code is known by database, replace it with dt code
@@ -74,9 +77,11 @@ def diagram4Code(request):
         data = json.loads(request.body.decode("utf-8"))
         debug = data.get("debug") or False
         return code2diagram(data["code"])
+    except ManagedException as error:
+        return {'error': '%s' % error}
     except Exception as error:
         if debug:
-            return {'error': 'Internal error: %s' % error}
+            return {'error': '%s' % error}
         else:
             return {'error': 'Cannot convert code to a diagram'}
 
