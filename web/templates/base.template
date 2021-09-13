@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html lang='en' xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta name='viewport' content='width=device-width, initial-scale=1'/>
+	<meta charset='utf-8'/>
+{% block page_title %}{% endblock %}
+	<script type='text/javascript' charset='utf-8' src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
+	<script type='text/javascript' charset='utf-8' src='https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js'></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+{% block external_scripts %}{% endblock %}
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css" crossorigin="anonymous">
+	<link rel="icon" href="/static/images/favicon.ico" type="image/x-icon">
+	<link rel="apple-touch-icon" href="/static/images/ke120.png">
+	<link rel="apple-touch-icon" sizes="152x152" href="/static/images/ke152.png">
+	<link rel="apple-touch-icon" sizes="167x167" href="/static/images/ke167.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="/static/images/ke180.png">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+{% block external_css %}{% endblock %}
+	<link rel='stylesheet' type='text/css' href='/static/ke.css'/>
+</head>
+<body>
+<nav class="navbar navbar-light ke-header fixed-top">
+  <a class="navbar-brand" href="/">
+		<span class="ke-logo"></span>
+		Knot Editor
+  </a>
+</nav>
+<div id='main' class='main'>
+{% block content %}{% endblock %}
+</div>
+<footer class='footer'>
+	<div class="footer-copyright text-center py-3">Copyright © 2021 <a href='/about'>Knot Editor Project</a></div>
+</footer>
+</body>
+<script type='text/javascript'>
+{% block postscript %}{% endblock %}
+</script>
+</html>

@@ -1,0 +1,313 @@
+@charset "UTF-8";
+
+html {
+  height: 100%;
+}
+
+body {
+  background-color: #f7f7f7;
+  min-height: 100%;
+}
+
+.main {
+  background-color: #ffffff;
+  padding-top: 90px;
+  padding-left: 0;
+  padding-right: 0;
+  min-height: 100vh;
+  padding-bottom: 65px;
+}
+
+.footer {
+  width: 100%;
+  height: 52px;
+  margin-top: -52px;
+  background-color: #f7f7f7;
+  border-top: .7px solid rgba(0,0,0,.125);
+  font-size: 80%;
+}
+
+.footer .footer-copyright {
+  width: 100vw;
+}
+
+.footer-copyright a {
+  color: inherit;
+}
+
+.main h2 {
+  padding-left: 50px;
+}
+
+.ke-logo {
+  display: inline-block;
+  background-image: url('/static/images/trefoil192.png');
+  height: 48px;
+  width: 48px;
+  background-size: 48px 48px;
+  margin-left: 0px;
+  margin-right: 6px;
+  margin-bottom: 2px;
+  vertical-align: middle;
+}
+
+nav.ke-header, div.ke-header {
+  background-color: #f7f7f7;
+  border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+nav.ke-header {
+  padding-top: 4px;
+  padding-bottom: 0px;
+}
+
+.ke-column {
+  padding-top: 15px;
+  padding-bottom: 15px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.ke-column-left {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.ke-column-right {
+  padding-right: 15px;
+}
+
+@media (max-width: 5in) {
+.ke-column-right {
+  width: 98%;
+}
+}
+
+@media (min-width: 5in) {
+.ke-column-right {
+  width: 99%;
+}
+}
+
+@media (max-width: 11in) {
+.ke-column-left {
+  width: 50%;
+}
+
+.ke-column-right {
+  margin-left: -50%;
+  padding-left: 50%;
+}
+}
+
+@media (min-width: 11in) {
+.ke-column-left {
+  width: 5.5in;
+}
+
+.ke-column-right {
+  margin-left: -5.5in;
+  padding-left: 5.5in;
+}
+}
+
+.btn.collapsible {
+  white-space: nowrap;
+}
+
+.btn.moved-left {
+  margin-left: -8px;
+}
+
+.btn:focus {
+  outline:0 !important;
+  box-shadow: none !important;
+}
+
+.MathJax {
+  font-size: 110% !important;
+}
+
+.MathJax[tabindex]:focus, body :focus .MathJax[tabindex] {
+  display: inline-table;
+  outline: none!important;
+}
+
+.ke-waiting-indicatror {
+  display: none;
+}
+
+.collapsible .chevron {
+  min-width: 24px;
+  margin-left: -16px;
+  margin-right: 4px;
+}
+
+.collapsible .chevron::before {
+  content: "\e5cc"; /* chevron_right */
+  vertical-align: -55%;
+  font-size: 120%;
+  line-height: 1rem;
+}
+
+.chevron-animated {
+  transition: transform .3s;
+  -webkit-transition: transform .3s;
+}
+
+.chevron-rotated {
+  -webkit-filter: none;
+  filter: none;
+  -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=1)";
+  -webkit-transform: rotate(90deg);
+  transform: rotate(90deg);
+}
+
+.ke-sketch-reload::before {
+  content: "\e5d5"; /* refresh */
+}
+
+.ke-sketch-reload {
+  float: right;
+  margin-right: -10px;
+}
+
+.error-area {
+  color: #FF3D00;
+}
+
+.ke-description p {
+  margin-bottom: 0.7em;
+}
+
+.ke-reference {
+  margin-top: 1.5em;
+}
+
+.ke-selections {
+  padding-top: 20px;
+  padding-right: 12px;
+  padding-left: 12px;
+}
+
+.ke-details-container {
+  float: right;
+  padding-top: 6px;
+}
+
+.table td {
+  border-top: none !important;
+}
+
+.ke-details-container label, .ke-view-selector-container label {
+  padding-right: 7px;
+  font-size: 0.85rem;
+}
+
+.ke-details-container input {
+  vertical-align: middle;
+}
+
+.ke-hints ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-bottom: -0.4em;
+}
+
+.ke-hints li {
+  margin-bottom: 0.7em;
+}
+
+.ke-hints li > a.handler:hover {
+  text-decoration: none;
+}
+
+.ke-hints li > .handler::before {
+  content: "\e86c";
+  color: #888;
+  font-size: 80%;
+  margin-left: -2px;
+  margin-right: 7px;
+  pointer-events: auto;
+  vertical-align: -23%;
+}
+
+.ke-tree ul {
+  line-height: 2.2em;
+  list-style-type: none;
+  padding-left: 20px;
+  display: none;
+}
+
+.ke-tree li.open > ul {
+  display: block;
+}
+
+.ke-tree > ul {
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+
+.ke-tree li > span.handler::before {
+  content: "\e835"; /* check_box_outline_blank */
+  color: #ccc;
+  font-size: 80%;
+  margin-left: -2px;
+  margin-right: 7px;
+  pointer-events: auto;
+  vertical-align: -23%;
+}
+
+.ke-tree li.closed > span.handler, .ke-tree li.open > span.handler {
+  cursor: pointer;
+}
+
+.ke-tree li.closed > span.handler::before {
+  color: #888;
+  content: "\e146"; /* add_box */
+}
+
+.ke-tree li.open > span.handler::before {
+  color: #888;
+  content: "\e909"; /* indeterminate_check_box */
+}
+
+.ke-tree li.empty.closed > span.handler, .ke-tree li.empty.open > span.handler {
+  cursor: initial;
+}
+
+.ke-tree li.empty.closed > span.handler::before, .ke-tree li.empty.open > span.handler::before {
+  color: #ccc;
+  content: "\e835"; /* check_box_outline_blank */
+}
+
+.ke-tree .implication {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
+.ke-reference {
+  font-size: 80%;
+}
+
+.ke-text .point {
+  padding-left: 0.1em;
+  padding-right: 0.1em;
+}
+
+.ke-text .angle-comma {
+  padding-right: 0.2em;
+}
+
+.ke-text .missing {
+  cursor: pointer;
+  border-style: solid;
+  border-width: 1.0px;
+  line-height: 1.25em;
+  padding-bottom: 0.15em;
+  padding-left: 0.1em;
+  padding-right: 0.1em;
+  border-color: #FF0000;
+  background-color: #FF8800;
+}
