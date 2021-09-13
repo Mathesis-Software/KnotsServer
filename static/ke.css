@@ -311,3 +311,18 @@ nav.ke-header {
   border-color: #FF0000;
   background-color: #FF8800;
 }
+
+code {
+  color: inherit;
+  border-style: solid;
+  border-color: #DDDDDD;
+  background-color: #F7F7F7;
+  border-width: 1.0px;
+  padding-top: 0.25em;
+  padding-bottom: 0.1em;
+  padding-left: 0.1em;
+  padding-right: 0.1em;
+  margin-left: 0.1em;
+  margin-right: 0.1em;
+  white-space: nowrap;
+}

@@ -1,0 +1,21 @@
+{% extends 'base.template' %}
+
+{% block page_title %}
+	<title>Diagram Search | Knot Editor</title>
+{% endblock %}
+
+{% block content %}
+<div style='padding-left:40px;padding-right:40px;'>
+<h4>Diagram Search</h4>
+<p>KnotEditor searches diagrams in a network database located on this site. The server does not store the diagrams, it generates the layout dynamically, using <a href='https://pypi.org/project/spherogram/'>Spherogram</a>.</p>
+<h5>Search Pattern Syntax</h5>
+<p>For network diagram search, the server supports several pattern formats. Some of them are listed below.</p>
+<h6>DT code</h6>
+<p>A space-separated list of even numbers, e.g. <code>6 20 22 -14 2 4 -18 -8 -12 -16 10</code>, or a string of Latin letters like <code>cjkGabIDFHe</code>. If you don't know what the DT code is, please <a href='https://en.wikipedia.org/wiki/Dowker%E2%80%93Thistlethwaite_notation'>read the wikipedia article</a>.</p>
+<h6>Torus knots</h6>
+<p>To load a diagram of a <a href='https://en.wikipedia.org/wiki/Torus_knot'>torus knot</a>, use <code>T(p,q)</code> notation, where <code>p</code> and <code>q</code> are integers. E.g., <code>T(2,3)</code> is <a href='https://en.wikipedia.org/wiki/Trefoil_knot'>the trefoil</a>.</p>
+<h6>Prime knots up to 16 crossings</h6>
+<p>The knots are listed in <a href='https://www.semanticscholar.org/paper/The-first-1%2C701%2C936-knots-Hoste-Thistlethwaite/7a76e7535eda960d4300bc4b848f408f8811415d'>&ldquo;The first 1,701,936 knots&rdquo; article</a>. We use the notation taken from <a href='http://katlas.org/wiki/The_Hoste-Thistlethwaite_Table_of_11_Crossing_Knots'>the Knot Atlas</a>. A knot is denoted as <code>K&lt;num&gt;[an]&lt;idx&gt;</code>. Here <code>&lt;num&gt;</code> is number of crossings, an integer between 3 and 16; <code>a</code> means alternating knot, <code>n</code> is for non-alternating; and finally <code>&lt;idx&gt;</code> is the index of the knot in the list ordered by minimal DT code.</p>
+<p>E.g., <code>K3a1</code> is the trefoil, and <code>K8n3</code> is the third non-alternating prime knot with eight crossings.</p>
+</div>
+{% endblock %}
