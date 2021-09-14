@@ -24,9 +24,9 @@ def code2diagram(code):
         letters = set()
         for let in code:
             if ord(let.lower()) - ord('a') >= len(code):
-                raise ManagedException('Letter %s is out of range A-%s' % (let, chr(ord('A') + len(code) - 1)))
+                raise ManagedException('Letter DT code error: %s is out of range A..%s' % (let, chr(ord('A') + len(code) - 1)))
             if let.lower() in letters:
-                raise ManagedException('Duplicate letter %s in DT code' % let)
+                raise ManagedException('Letter DT code error: duplicate %s' % let)
             letters.add(let.lower())
 
     elif re.match(r'^[-\d ]+$', code):
@@ -35,13 +35,14 @@ def code2diagram(code):
         indices = set()
         for num in intcode:
             if num == 0:
-                raise ManagedException('0 in DT code')
+                raise ManagedException('Numeric DT code error: 0 occured')
             if num % 2 == 1:
-                raise ManagedException('Odd number %d in DT code' % num)
+                raise ManagedException('Numeric DT code error: odd %d occured' % num)
             if abs(num) in indices:
-                raise ManagedException('Duplicate %d in DT code' % num)
-            if abs(num) > len(intcode) * 2:
-                raise ManagedException('Invalid value %d in DT code of length %d' % (num, len(intcode)))
+                raise ManagedException('Numeric DT code error: duplicate %d' % num)
+            max_value = 2 * len(intcode)
+            if abs(num) > max_value:
+                raise ManagedException('Numeric DT code error: %d is out of range -%d..%d' % (num, max_value, max_value))
             indices.add(abs(num))
 
     # if code is regognized as knot name, replace it with dt code
