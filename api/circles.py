@@ -1,4 +1,3 @@
-from spherogram.links import Link
 from .CirclePack import CirclePack
 
 def diagram4link(link):
