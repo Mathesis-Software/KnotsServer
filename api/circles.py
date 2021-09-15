@@ -60,8 +60,11 @@ def diagram4link(link):
 
     best_ratio = -1
     pack = None
-    for external_face_id in face_id_to_obj.keys():
-        face = face_id_to_obj[external_face_id]
+    max_edges = max(len(face) for face in face_id_to_obj.values())
+    for external_face_id, face in face_id_to_obj.items():
+        if len(face) < max_edges:
+            continue
+
         external_edge_ids = [edge_obj_to_id[strand] for strand in face]
         external_vert_ids = [vert_obj_to_id[strand[0]] for strand in face]
 
