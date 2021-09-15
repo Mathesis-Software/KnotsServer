@@ -74,7 +74,6 @@ def diagram4link(link):
         internal = {obj_id: all_cycles[obj_id] for obj_id in internal_ids}
 
         candidate = CirclePack(internal, external)
-        #opts = candidate.keys()
         opts = [key for key in candidate.keys() if key.startswith('v')]
         radiis = [candidate[v][1] for v in opts]
         candidate_ratio = min(radiis) / max(radiis)
