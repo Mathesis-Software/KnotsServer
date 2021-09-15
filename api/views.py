@@ -9,6 +9,8 @@ from django.views.decorators.http import require_POST
 from .decorators import json_response
 from .models import Knot
 
+from .circles import diagram4link
+
 class ManagedException(Exception):
     pass
 
@@ -62,9 +64,11 @@ def code2diagram(code):
         code = 'DT:[(' + code.replace(' ', ',') + ')]'
 
     link = Link(code)
-    diagram = OrthogonalLinkDiagram(link)
-    data = diagram.plink_data()
-    points = data[0]
+    points, crossings = diagram4link(link)
+
+#    diagram = OrthogonalLinkDiagram(link)
+#    data = diagram.plink_data()
+#    points = data[0]
     maxX = max(p[0] for p in points)
     maxY = max(p[1] for p in points)
     minX = min(p[0] for p in points)
@@ -72,7 +76,7 @@ def code2diagram(code):
     points = [
         (int((p[0] - minX) / (maxX - minX) * 400 + 50),
          int((p[1] - minY) / (maxY - minY) * 400 + 50)) for p in points]
-    crossings = data[2]
+#    crossings = data[2]
 
     return {
         'type': 'diagram',
