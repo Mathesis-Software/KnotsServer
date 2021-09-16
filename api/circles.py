@@ -1,3 +1,4 @@
+import itertools
 from .CirclePack import CirclePack
 
 def diagram4link(link):
@@ -85,6 +86,8 @@ def diagram4link(link):
             pack = candidate
             best_ratio = candidate_ratio
 
+    max_distance = max(abs(c0[0] - c1[0]) for c0, c1 in itertools.combinations(pack.values(), 2))
+
     vertices = []
     up_crossings = {}
     down_crossings = {}
@@ -95,20 +98,25 @@ def diagram4link(link):
         r0 = pack[key0][1]
         r1 = pack[key1][1]
 
-        ratio0 = r0 / (r0 + r1) * 2 / 3
-        ratio1 = r1 / (r0 + r1) * 2 / 3
-        pt0 = c1 * ratio0 + c0 * (1 - ratio0)
-        pt1 = c0 * ratio1 + c1 * (1 - ratio1)
-        vertices.append((pt0.real, pt0.imag))
-        vertices.append((pt1.real, pt1.imag))
+        if r0 + r1 >= max_distance / 5:
+            ratio0 = r0 / (r0 + r1) * 2 / 3
+            ratio1 = r1 / (r0 + r1) * 2 / 3
+            pt0 = c1 * ratio0 + c0 * (1 - ratio0)
+            pt1 = c0 * ratio1 + c1 * (1 - ratio1)
+            return [pt0, pt1]
+        else:
+            ratio = r0 / (r0 + r1)
+            pt = c1 * ratio + c0 * (1 - ratio)
+            return [pt]
 
     for strand in strands:
         prev = strand.opposite().rotate(2)
         v0 = vert_obj_to_id[prev[0]]
         edge = edge_obj_to_id[strand]
         v1 = vert_obj_to_id[strand[0]]
-        add_half_edge(v0, edge)
-        add_half_edge(edge, v1)
+        pts = add_half_edge(v0, edge) + add_half_edge(edge, v1)
+        for pt in pts:
+            vertices.append((pt.real, pt.imag))
         if strand[1] % 2 == 0:
             up_crossings[v1] = len(vertices) - 1
         else:
