@@ -5,4 +5,4 @@ class json_response:
         self.func = func
 
     def __call__(self, *args, **kwargs):
-        return JsonResponse(self.func(*args, **kwargs), safe=False)
+        return JsonResponse(self.func(*args, **kwargs))

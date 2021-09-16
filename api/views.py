@@ -87,7 +87,7 @@ def code2diagram(code):
             }]
         })
 
-    return layouts
+    return {'layouts': layouts}
 
 @require_POST
 @csrf_exempt
