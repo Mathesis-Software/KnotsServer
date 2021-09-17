@@ -2,6 +2,7 @@ import json, re
 
 from spherogram.links import Link
 
+from django.core.paginator import Paginator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -75,7 +76,34 @@ def validate_numeric_dt_code(code):
         indices.add(abs(num))
     return 'DT:[(' + code.replace(' ', ',') + ')]'
 
-def code2diagrams(code):
+def code2diagrams(code, page, debug=False):
+    try:
+        if '?' in code or '*' in code:
+            return code2diagram_list(code, page)
+        else:
+            return {'layouts': [code2single_diagram(code)], 'hasNextPage': False}
+    except ManagedException as error:
+        return {'error': '%s' % error}
+    except Exception as error:
+        if debug:
+            return {'error': '%s' % error}
+        else:
+            return {'error': 'Diagram search error'}
+
+def code2diagram_list(pattern, page_no):
+    for_query = '^' + pattern.lower().replace('?', '.').replace('*', '.*') + '$'
+
+    knots = Knot.objects.filter(identifier__regex=for_query).order_by('id')
+    paginator = Paginator(knots, 5)
+    page = paginator.page(page_no + 1)
+    try:
+        layouts = [link2diagram(Link(validate_letter_dt_code(k.dtcode)), k.identifier) \
+            for k in page.object_list]
+        return {'layouts': layouts, 'hasNextPage': page.has_next()}
+    except:
+        return {'layouts': [], 'hasNextPage': False}
+
+def code2single_diagram(code):
     # remove extra whitespaces
     code = ' '.join(code.split())
     # keep name for use in diagram json
@@ -95,8 +123,6 @@ def code2diagrams(code):
         except:
             pass
 
-    layouts = []
-
     try:
         # Last resort: maybe, spherogram know the knot name
         link = Link(validated if validated else name)
@@ -104,36 +130,17 @@ def code2diagrams(code):
         raise ManagedException(f'No diagram found for `{name}`')
 
     try:
-        layouts.append(link2diagram(link, name))
+        return link2diagram(link, name)
     except:
         raise ManagedException(f'Layout error for diagram `{name}`')
-
-    return layouts
 
 @require_POST
 @csrf_exempt
 @json_response
 def diagram4Code(request):
-    debug = False
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-        debug = data.get('debug') or False
-        page = data['page']
-        return {
-            'layouts': code2diagrams(data['code']),
-            'hasNextPage': False
-        }
-    except ManagedException as error:
-        return {'error': '%s' % error}
-    except Exception as error:
-        if debug:
-            return {'error': '%s' % error}
-        else:
-            return {'error': 'Diagram search error'}
+    data = json.loads(request.body.decode('utf-8'))
+    return code2diagrams(data['code'], data['page'], data.get('debug') or False)
 
 @json_response
 def test(request, code):
-    try:
-        return {'layouts': code2diagrams(code)}
-    except Exception as error:
-        return {'error': '%s' % error}
+    return code2diagrams(code, 0, True)
