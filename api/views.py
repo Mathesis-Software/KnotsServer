@@ -14,6 +14,27 @@ from .ortho import diagram4link as diagram4link_ortho
 class ManagedException(Exception):
     pass
 
+def link2diagram(link, name):
+    points, crossings = diagram4link_circles(link)
+
+    maxX = max(p[0] for p in points)
+    maxY = max(p[1] for p in points)
+    minX = min(p[0] for p in points)
+    minY = min(p[1] for p in points)
+    points = [
+        (int((p[0] - minX) / (maxX - minX) * 400 + 50),
+         int((p[1] - minY) / (maxY - minY) * 400 + 50)) for p in points]
+
+    return {
+        'type': 'diagram',
+        'name': name,
+        'components': [{
+            'vertices': [[index, pt[0], pt[1]] for (index, pt) in enumerate(points)],
+            'crossings': [{'down': c[0], 'up': c[1]} for c in crossings],
+            'isClosed': True
+        }]
+    }
+
 def code2diagram(code):
     # remove extra whitespaces
     code = ' '.join(code.split())
@@ -65,28 +86,7 @@ def code2diagram(code):
 
     link = Link(code)
     layouts = []
-
-    for diagram4link in diagram4link_circles, diagram4link_ortho:
-        points, crossings = diagram4link(link)
-
-        maxX = max(p[0] for p in points)
-        maxY = max(p[1] for p in points)
-        minX = min(p[0] for p in points)
-        minY = min(p[1] for p in points)
-        points = [
-            (int((p[0] - minX) / (maxX - minX) * 400 + 50),
-             int((p[1] - minY) / (maxY - minY) * 400 + 50)) for p in points]
-
-        layouts.append({
-            'type': 'diagram',
-            'name': name,
-            'components': [{
-                'vertices': [[index, pt[0], pt[1]] for (index, pt) in enumerate(points)],
-                'crossings': [{'down': c[0], 'up': c[1]} for c in crossings],
-                'isClosed': True
-            }]
-        })
-
+    layouts.append(link2diagram(link, name))
     return {'layouts': layouts}
 
 @require_POST
