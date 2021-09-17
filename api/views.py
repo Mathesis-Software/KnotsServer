@@ -95,9 +95,12 @@ def code2diagram(code):
 def diagram4Code(request):
     debug = False
     try:
-        data = json.loads(request.body.decode("utf-8"))
-        debug = data.get("debug") or False
-        return code2diagram(data["code"])
+        data = json.loads(request.body.decode('utf-8'))
+        debug = data.get('debug') or False
+        page = data['page']
+        response = code2diagram(data['code'])
+        response['hasNextPage'] = False
+        return response
     except ManagedException as error:
         return {'error': '%s' % error}
     except Exception as error:
