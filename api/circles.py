@@ -10,7 +10,6 @@ def diagram4link(link):
         edge_to_face_id.update({strand: face_id for strand in face})
 
     edge_obj_to_id = {}
-    edge_id_to_obj = {}
     strands = set(link.crossing_strands())
     while strands:
         st = strands.pop()
@@ -19,7 +18,6 @@ def diagram4link(link):
         edge_id = 'e%s' % (len(edge_obj_to_id) // 2)
         edge_obj_to_id[st] = edge_id
         edge_obj_to_id[oppo] = edge_id
-        edge_id_to_obj[edge_id] = st
 
     crossings = set(s[0] for s in link.crossing_strands())
     vert_obj_to_id = {crs: 'v%s' % (crs.label, ) for crs in crossings}
@@ -39,8 +37,7 @@ def diagram4link(link):
             cycle.append(edge_obj_to_id[strand])
             cycle.append(vert_obj_to_id[strand[0]])
         all_cycles[face_id] = cycle
-        #print('%s => %s' % (face_id, all_cycles[face_id]))
-    for edge_id, edge in edge_id_to_obj.items():
+    for edge, edge_id in edge_obj_to_id.items():
         oppo = edge.opposite()
         all_cycles[edge_id] = [
             vert_obj_to_id[edge[0]],
@@ -48,7 +45,6 @@ def diagram4link(link):
             vert_obj_to_id[oppo[0]],
             edge_to_face_id[oppo],
         ]
-        #print('%s => %s' % (edge_id, all_cycles[edge_id]))
     for vert_id, vert in vert_id_to_obj.items():
         cycle = []
         for i in range(4):
@@ -57,34 +53,36 @@ def diagram4link(link):
             cycle.append(edge_to_face_id[edge])
         cycle.reverse()
         all_cycles[vert_id] = cycle
-        #print('%s => %s' % (vert_id, all_cycles[vert_id]))
 
-    best_ratio = -1
-    pack = None
-    max_edges = max(len(face) for face in face_id_to_obj.values())
-    for external_face_id, face in face_id_to_obj.items():
-        if len(face) < max_edges:
-            continue
+    best_cost = None
+    optimal = None
+    for external_face_id in face_id_to_obj.keys():
+        external_ids = all_cycles[external_face_id]
+        external = {x_id: 1 for x_id in external_ids}
 
-        external_edge_ids = [edge_obj_to_id[strand] for strand in face]
-        external_vert_ids = [vert_obj_to_id[strand[0]] for strand in face]
-
-        external = {edge_id: 1 for edge_id in external_edge_ids}
-        external.update({vert_id: 1 for vert_id in external_vert_ids})
+        levels = [{external_face_id}]
+        all_levels = {external_face_id}
+        while len(all_levels) < len(all_cycles):
+            next_level = set()
+            for obj_id in levels[-1]:
+                for nbr in all_cycles[obj_id]:
+                    if nbr not in all_levels:
+                        next_level.add(nbr)
+                        all_levels.add(nbr)
+            levels.append(next_level)
 
         internal_ids = [f for f in face_id_to_obj.keys() if f != external_face_id] + \
-                       [e for e in edge_id_to_obj.keys() if e not in external_edge_ids] + \
-                       [v for v in vert_id_to_obj.keys() if v not in external_vert_ids]
+                       [e for e in edge_obj_to_id.values() if e not in external_ids] + \
+                       [v for v in vert_id_to_obj.keys() if v not in external_ids]
         internal = {obj_id: all_cycles[obj_id] for obj_id in internal_ids}
 
-        candidate = CirclePack(internal, external)
-        opts = [key for key in candidate.keys() if key.startswith('v')]
-        radiis = [candidate[v][1] for v in opts]
-        candidate_ratio = min(radiis) / max(radiis)
-        if candidate_ratio > best_ratio:
-            #print('%s => %.3f' % (external_face_id, candidate_ratio))
-            pack = candidate
-            best_ratio = candidate_ratio
+        cost = [len(levels)] + [len(lev) for lev in reversed(levels)]
+        if best_cost is None or cost < best_cost:
+            best_cost = cost
+            optimal = (internal, external)
+
+    pack = CirclePack(optimal[0], optimal[1])
+
 
     max_distance = max(abs(c0[0] - c1[0]) for c0, c1 in itertools.combinations(pack.values(), 2))
 
