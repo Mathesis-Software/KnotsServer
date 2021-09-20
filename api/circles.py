@@ -1,7 +1,7 @@
 import itertools
 from .CirclePack import CirclePack
 
-def diagram4link(link):
+def collect_data(link):
     face_id_to_obj = {}
     edge_to_face_id = {}
     for index, face in enumerate(link.faces()):
@@ -10,25 +10,32 @@ def diagram4link(link):
         edge_to_face_id.update({strand: face_id for strand in face})
 
     edge_obj_to_id = {}
-    strands = set(link.crossing_strands())
-    while strands:
-        st = strands.pop()
+    edge_id_to_obj = {}
+    oppos = set()
+    for st in link.crossing_strands():
+        if st in oppos:
+            continue
         oppo = st.opposite()
-        strands.remove(oppo)
+        oppos.add(oppo)
         edge_id = 'e%s' % (len(edge_obj_to_id) // 2)
         edge_obj_to_id[st] = edge_id
         edge_obj_to_id[oppo] = edge_id
+        edge_id_to_obj[edge_id] = st
 
     crossings = set(s[0] for s in link.crossing_strands())
     vert_obj_to_id = {crs: 'v%s' % (crs.label, ) for crs in crossings}
-    vert_id_to_obj = {vert_id: obj for (obj, vert_id) in vert_obj_to_id.items()}
 
-    strands = [link.crossing_strands()[0]]
+    initial_strand = link.crossing_strands()[0]
+    strand = initial_strand
+    route = []
     while True:
-        s = strands[-1].next()
-        if s == strands[0]:
+        edge = edge_obj_to_id[strand]
+        vert = vert_obj_to_id[strand[0]]
+        route.append({'id': edge})
+        route.append({'id': vert, 'up': strand[1] % 2 == 0})
+        strand = strand.next()
+        if strand == initial_strand:
             break
-        strands.append(s)
 
     all_cycles = {}
     for face_id, face in face_id_to_obj.items():
@@ -45,7 +52,7 @@ def diagram4link(link):
             vert_obj_to_id[oppo[0]],
             edge_to_face_id[oppo],
         ]
-    for vert_id, vert in vert_id_to_obj.items():
+    for vert, vert_id in vert_obj_to_id.items():
         cycle = []
         for i in range(4):
             edge = (vert, i)
@@ -54,12 +61,18 @@ def diagram4link(link):
         cycle.reverse()
         all_cycles[vert_id] = cycle
 
-    best_cost = None
-    optimal = None
-    for external_face_id in face_id_to_obj.keys():
-        external_ids = all_cycles[external_face_id]
-        external = {x_id: 1 for x_id in external_ids}
+    return all_cycles, route
 
+def is_vert(obj_id):
+    return obj_id.startswith('v')
+def is_edge(obj_id):
+    return obj_id.startswith('e')
+def is_face(obj_id):
+    return obj_id.startswith('f')
+
+def layout(all_cycles):
+    best_cost = None
+    for external_face_id in [f_id for f_id in all_cycles.keys() if is_face(f_id)]:
         levels = [{external_face_id}]
         all_levels = {external_face_id}
         while len(all_levels) < len(all_cycles):
@@ -71,18 +84,21 @@ def diagram4link(link):
                         all_levels.add(nbr)
             levels.append(next_level)
 
-        internal_ids = [f for f in face_id_to_obj.keys() if f != external_face_id] + \
-                       [e for e in edge_obj_to_id.values() if e not in external_ids] + \
-                       [v for v in vert_id_to_obj.keys() if v not in external_ids]
-        internal = {obj_id: all_cycles[obj_id] for obj_id in internal_ids}
-
         cost = [len(levels)] + [len(lev) for lev in reversed(levels)]
         if best_cost is None or cost < best_cost:
             best_cost = cost
-            optimal = (internal, external)
+            external_ids = all_cycles[external_face_id]
+            internal_ids = [obj_id for obj_id in all_cycles.keys() if obj_id not in external_ids and obj_id != external_face_id]
+            optimal = internal_ids, external_ids, levels, external_face_id
+    return optimal
 
-    pack = CirclePack(optimal[0], optimal[1])
+def diagram4link(link):
+    all_cycles, route = collect_data(link)
+    internal_ids, external_ids, levels, external_face_id = layout(all_cycles)
 
+    external = {x_id: 1 if is_edge(x_id) else 1 for x_id in external_ids}
+    internal = {obj_id: all_cycles[obj_id] for obj_id in internal_ids}
+    pack = CirclePack(internal, external)
 
     max_distance = max(abs(c0[0] - c1[0]) for c0, c1 in itertools.combinations(pack.values(), 2))
 
@@ -107,17 +123,13 @@ def diagram4link(link):
             pt = c1 * ratio + c0 * (1 - ratio)
             return [pt]
 
-    for strand in strands:
-        prev = strand.opposite().rotate(2)
-        v0 = vert_obj_to_id[prev[0]]
-        edge = edge_obj_to_id[strand]
-        v1 = vert_obj_to_id[strand[0]]
-        pts = add_half_edge(v0, edge) + add_half_edge(edge, v1)
-        for pt in pts:
+    for prev, curr in zip([route[-1]] + route, route + [route[0]]):
+        for pt in add_half_edge(prev['id'], curr['id']):
             vertices.append((pt.real, pt.imag))
-        if strand[1] % 2 == 0:
-            up_crossings[v1] = len(vertices) - 1
-        else:
-            down_crossings[v1] = len(vertices) - 1
+        if is_vert(curr['id']):
+            if curr['up']:
+                up_crossings[curr['id']] = len(vertices) - 1
+            else:
+                down_crossings[curr['id']] = len(vertices) - 1
 
     return (vertices, [(down_crossings[v], up_crossings[v]) for v in up_crossings.keys()])
