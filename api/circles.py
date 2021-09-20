@@ -1,4 +1,4 @@
-import itertools
+import itertools, math
 from .CirclePack import CirclePack
 
 def collect_data(link):
@@ -32,7 +32,7 @@ def collect_data(link):
         edge = edge_obj_to_id[strand]
         vert = vert_obj_to_id[strand[0]]
         route.append({'id': edge})
-        route.append({'id': vert, 'up': strand[1] % 2 == 0})
+        route.append({'id': vert, 'up': strand[1] % 2 == 0, 'prev': edge})
         strand = strand.next()
         if strand == initial_strand:
             break
@@ -96,6 +96,81 @@ def diagram4link(link):
     all_cycles, route = collect_data(link)
     internal_ids, external_ids, levels, external_face_id = layout(all_cycles)
 
+    def replace(lst, elt, repl):
+        index = lst.index(elt)
+        return lst[:index] + repl + lst[index + 1:]
+
+    def extend_x(x_id, nbr01, nbr10):
+        nonlocal external_ids, internal_ids, route
+        neighbours = all_cycles[x_id]
+        index = neighbours.index(nbr01)
+        neighbours = neighbours[index:] + neighbours[:index]
+
+        index01 = 0
+        index10 = neighbours.index(nbr10)
+
+        num = 2
+        new_xs = [f'{x_id}_{index}' for index in range(num)]
+
+        del all_cycles[x_id]
+        all_cycles[new_xs[0]] = [neighbours[0], new_xs[1]] + neighbours[index10:]
+        all_cycles[new_xs[1]] = neighbours[:index10 + 1] + [new_xs[0]]
+
+        for index, nbr in enumerate(neighbours):
+            if index == index01:
+                replacement = new_xs[::-1]
+            elif index in range(index01 + 1, index10):
+                replacement = [new_xs[1]]
+            elif index == index10:
+                replacement = new_xs
+            else:
+                replacement = [new_xs[0]]
+            all_cycles[nbr] = replace(all_cycles[nbr], x_id, replacement)
+
+        if x_id in external_ids:
+            external_ids.remove(x_id)
+            external_ids += new_xs
+        else:
+            internal_ids.remove(x_id)
+            internal_ids += new_xs
+
+        while True:
+            inds = [index for index, elt in enumerate(route) if elt['id'] == x_id]
+            if not inds:
+                break
+            index = inds[0]
+            def copy(new_id):
+                elt = dict(route[index])
+                elt['id'] = new_id
+                return elt
+            replacement = [copy(xx_id) for xx_id in new_xs]
+            prev = route[index - 1]['id']
+            if new_xs[-1] in all_cycles[prev]:
+                replacement = replacement[::-1]
+            route = replace(route, route[index], replacement)
+
+    def extend_vert(vert_id, face_along):
+        nbrs = all_cycles[vert_id]
+        return extend_x(vert_id, face_along, nbrs[nbrs.index(face_along) - 4])
+
+    small_faces = []
+    for obj_id, cycle in all_cycles.items():
+        if is_face(obj_id) and len(cycle) == 4:
+            small_faces.append(obj_id)
+
+    vert_to_face = {}
+    for face_id in small_faces:
+        for nbr in all_cycles[face_id]:
+            if is_vert(nbr):
+                vert_to_face[nbr] = face_id
+
+    for nbr in all_cycles[external_face_id]:
+        if is_vert(nbr):
+            vert_to_face[nbr] = external_face_id
+
+    for v, f in vert_to_face.items():
+        extend_vert(v, f)
+
     external = {x_id: 1 if is_edge(x_id) else 1 for x_id in external_ids}
     internal = {obj_id: all_cycles[obj_id] for obj_id in internal_ids}
     pack = CirclePack(internal, external)
@@ -106,13 +181,27 @@ def diagram4link(link):
     up_crossings = {}
     down_crossings = {}
 
-    def add_half_edge(key0, key1):
-        c0 = pack[key0][0]
-        c1 = pack[key1][0]
-        r0 = pack[key0][1]
-        r1 = pack[key1][1]
+    rot = pow(math.e, complex(0, 1/6))
+    def add_half_edge(elt0, elt1):
+        key0 = elt0['id']
+        key1 = elt1['id']
+        c0, r0 = pack[key0]
+        c1, r1 = pack[key1]
 
-        if r0 + r1 >= max_distance / 5:
+        if is_vert(key0) and is_vert(key1):
+            ratio0 = r0 / (r0 + r1) * 1 / 2
+            ratio1 = r1 / (r0 + r1) * 1 / 2
+            pt0 = c1 * ratio0 + c0 * (1 - ratio0)
+            pt1 = c0 * ratio1 + c1 * (1 - ratio1)
+            nbs = [x_id for x_id in all_cycles[key0] if not is_face(x_id)]
+            if (nbs.index(key1) - nbs.index(elt0['prev'])) in [1, -2]:
+                pt0 = c1 + (pt0 - c1) * rot.conjugate()
+                pt1 = c0 + (pt1 - c0) * rot.conjugate()
+            else:
+                pt0 = c1 + (pt0 - c1) * rot
+                pt1 = c0 + (pt1 - c0) * rot
+            return [pt0, pt1]
+        elif r0 + r1 >= max_distance / 5:
             ratio0 = r0 / (r0 + r1) * 2 / 3
             ratio1 = r1 / (r0 + r1) * 2 / 3
             pt0 = c1 * ratio0 + c0 * (1 - ratio0)
@@ -123,13 +212,18 @@ def diagram4link(link):
             pt = c1 * ratio + c0 * (1 - ratio)
             return [pt]
 
-    for prev, curr in zip([route[-1]] + route, route + [route[0]]):
-        for pt in add_half_edge(prev['id'], curr['id']):
+    flag = False
+    for prev, curr in zip(route, route[1:] + [route[0]]):
+        for pt in add_half_edge(prev, curr):
             vertices.append((pt.real, pt.imag))
-        if is_vert(curr['id']):
+        flag = not flag and is_vert(curr['id'])
+        if flag:
+            curr_id = curr['id']
+            if curr_id[-2] == '_':
+                curr_id = curr_id[:-2]
             if curr['up']:
-                up_crossings[curr['id']] = len(vertices) - 1
+                up_crossings[curr_id] = len(vertices) - 1
             else:
-                down_crossings[curr['id']] = len(vertices) - 1
+                down_crossings[curr_id] = len(vertices) - 1
 
     return (vertices, [(down_crossings[v], up_crossings[v]) for v in up_crossings.keys()])
