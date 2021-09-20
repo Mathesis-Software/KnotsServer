@@ -212,18 +212,17 @@ def diagram4link(link):
             pt = c1 * ratio + c0 * (1 - ratio)
             return [pt]
 
-    flag = False
     for prev, curr in zip(route, route[1:] + [route[0]]):
         for pt in add_half_edge(prev, curr):
             vertices.append((pt.real, pt.imag))
-        flag = not flag and is_vert(curr['id'])
-        if flag:
+        if is_vert(curr['id']):
             curr_id = curr['id']
+            crossings = up_crossings if curr['up'] else down_crossings
             if curr_id[-2] == '_':
                 curr_id = curr_id[:-2]
-            if curr['up']:
-                up_crossings[curr_id] = len(vertices) - 1
+                if prev['id'].startswith(curr_id):
+                    crossings[curr_id] = len(vertices) - 2
             else:
-                down_crossings[curr_id] = len(vertices) - 1
+                crossings[curr_id] = len(vertices) - 1
 
     return (vertices, [(down_crossings[v], up_crossings[v]) for v in up_crossings.keys()])
