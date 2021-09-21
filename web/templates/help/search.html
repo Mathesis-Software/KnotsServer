@@ -20,5 +20,8 @@
 <li><h6>Prime knots up to 16 crossings (Hoste-Thistlethwaite-Weeks table)</h6>
 <p>The knots are listed in <a href='https://www.semanticscholar.org/paper/The-first-1%2C701%2C936-knots-Hoste-Thistlethwaite/7a76e7535eda960d4300bc4b848f408f8811415d'>&ldquo;The first 1,701,936 knots&rdquo; article</a>. We use the notation taken from <a href='http://katlas.org/wiki/The_Hoste-Thistlethwaite_Table_of_11_Crossing_Knots'>the Knot Atlas</a>. A knot is denoted as <code>K&lt;num&gt;[an]&lt;idx&gt;</code>. Here <code>&lt;num&gt;</code> is the number of crossings, an integer between 3 and 16; <code>a</code> means the knot is alternating, <code>n</code> is for non-alternating; and finally <code>&lt;idx&gt;</code> is the index of the knot in the list ordered by minimal DT code.</p>
 <p>E.g., <code>K3a1</code> is the trefoil, and <code>K8n3</code> is the third non-alternating prime knot with eight crossings.</p></li>
+<li><h6>Regular expressions</h6>
+<p>Special character <code>?</code> means &ldquo;any character&rdquo;, <code>*</code> is for &ldquo;any sequences of characters&rdquo;. E.g., query <code>9_?</code> matches nine knots, from <code>9_1</code> to <code>9_9</code>. Query <code>9_*</code> matches 49 knots.</p>
+<p>Note that regular expressions work with knot tables only. DT codes, as well as Torus knot identifiers, cannot be used with special characters.</p>
 </ul>
 {% endblock %}
