@@ -92,6 +92,107 @@ def layout(all_cycles):
             optimal = internal_ids, external_ids, levels, external_face_id
     return optimal
 
+def create_diagram(pack, route, all_cycles):
+    vertices = []
+    up_crossings = {}
+    down_crossings = {}
+
+    rot = pow(math.e, complex(0, 1/6))
+    def add_half_edge(elt0, elt1):
+        key0 = elt0['id']
+        key1 = elt1['id']
+        c0, r0 = pack[key0]
+        c1, r1 = pack[key1]
+
+        if is_vert(key0) and is_vert(key1):
+            ratio0 = r0 / (r0 + r1) * 1 / 2
+            ratio1 = r1 / (r0 + r1) * 1 / 2
+            pt0 = c1 * ratio0 + c0 * (1 - ratio0)
+            pt1 = c0 * ratio1 + c1 * (1 - ratio1)
+            nbs = [x_id for x_id in all_cycles[key0] if not is_face(x_id)]
+            if (nbs.index(key1) - nbs.index(elt0['prev'])) in [1, -2]:
+                pt0 = c1 + (pt0 - c1) * rot.conjugate()
+                pt1 = c0 + (pt1 - c0) * rot.conjugate()
+            else:
+                pt0 = c1 + (pt0 - c1) * rot
+                pt1 = c0 + (pt1 - c0) * rot
+            return [pt0, pt1]
+        else:
+            ratio0 = r0 / (r0 + r1) * 2 / 3
+            ratio1 = r1 / (r0 + r1) * 2 / 3
+            pt0 = c1 * ratio0 + c0 * (1 - ratio0)
+            pt1 = c0 * ratio1 + c1 * (1 - ratio1)
+            return [pt0, pt1]
+
+    for prev, curr in zip(route, route[1:] + [route[0]]):
+        for pt in add_half_edge(prev, curr):
+            vertices.append((pt.real, pt.imag))
+        if is_vert(curr['id']):
+            curr_id = curr['id']
+            crossings = up_crossings if curr['up'] else down_crossings
+            if curr_id[-2] == '_':
+                curr_id = curr_id[:-2]
+                if prev['id'].startswith(curr_id):
+                    crossings[curr_id] = len(vertices) - 2
+            else:
+                crossings[curr_id] = len(vertices) - 1
+
+    return vertices, up_crossings, down_crossings
+
+def simplify_diagram(vertices, up_crossings, down_crossings):
+    def dist(v0, v1):
+        return math.sqrt((v0[0] - v1[0]) ** 2 + (v0[1] - v1[1]) ** 2)
+    def vector_product(pt0, pt1, pt2):
+        return (pt1[0] - pt0[0]) * (pt2[1] - pt0[1]) - (pt2[0] - pt0[0]) * (pt1[1] - pt0[1])
+    def angle(pt0, pt1, pt2):
+        d0 = dist(pt0, pt1)
+        d1 = dist(pt0, pt2)
+        d2 = dist(pt1, pt2)
+        cos = (d0 **2 + d1 ** 2 - d2 ** 2) / (2 * d0 * d1)
+        if cos >= 1:
+            return 0
+        elif cos <= -1:
+            return math.pi
+        return math.acos((d0 **2 + d1 ** 2 - d2 ** 2) / (2 * d0 * d1))
+    def crosses(v0, v1):
+        vps = [
+            vector_product(v0[0], v1[0], v0[1]),
+            vector_product(v1[0], v0[1], v1[1]),
+            vector_product(v0[1], v1[1], v0[0]),
+            vector_product(v1[1], v0[0], v1[0])
+        ]
+        return all(vp >= 0 for vp in vps) or all(vp <= 0 for vp in vps)
+
+    def detect_crosses(vector, seq):
+        return [1 if crosses(vector, (seq[i], seq[i + 1])) else 0 for i in range(len(seq) - 1)]
+
+    while True:
+        ln = len(vertices)
+        angles = [angle(vertices[i], vertices[i - 1], vertices[(i + 1) % ln]) for i in range(ln)]
+        forbidden_indices = []
+        while True:
+            max_angle = max(a for i, a in enumerate(angles) if i not in forbidden_indices)
+            if max_angle < math.pi * 0.8:
+                break
+            index = angles.index(max_angle)
+            vrts = vertices[index + 1:] + vertices[:index]
+            vrts = vrts[1:-1]
+            xs_before0 = detect_crosses((vertices[index], vertices[index - 1]), vrts)
+            xs_before1 = detect_crosses((vertices[index], vertices[(index + 1) % ln]), vrts)
+            xs_after = detect_crosses((vertices[index - 1], vertices[(index + 1) % ln]), vrts)
+            if all(xs_before0[i] + xs_before1[i] == xs_after[i] for i in range(len(xs_after))):
+                break
+            forbidden_indices.append(index)
+        if max_angle < math.pi * 0.8:
+            break
+        vertices = vertices[:index] + vertices[index + 1:]
+        def new_index(ind):
+            return ind if ind < index else (ind - 1) % len(vertices)
+        up_crossings = {k : new_index(v) for k, v in up_crossings.items()}
+        down_crossings = {k : new_index(v) for k, v in down_crossings.items()}
+
+    return vertices, up_crossings, down_crossings
+
 def diagram4link(link):
     all_cycles, route = collect_data(link)
     internal_ids, external_ids, levels, external_face_id = layout(all_cycles)
@@ -175,54 +276,7 @@ def diagram4link(link):
     internal = {obj_id: all_cycles[obj_id] for obj_id in internal_ids}
     pack = CirclePack(internal, external)
 
-    max_distance = max(abs(c0[0] - c1[0]) for c0, c1 in itertools.combinations(pack.values(), 2))
+    vertices, up_crossings, down_crossings = create_diagram(pack, route, all_cycles)
+    vertices, up_crossings, down_crossings = simplify_diagram(vertices, up_crossings, down_crossings)
 
-    vertices = []
-    up_crossings = {}
-    down_crossings = {}
-
-    rot = pow(math.e, complex(0, 1/6))
-    def add_half_edge(elt0, elt1):
-        key0 = elt0['id']
-        key1 = elt1['id']
-        c0, r0 = pack[key0]
-        c1, r1 = pack[key1]
-
-        if is_vert(key0) and is_vert(key1):
-            ratio0 = r0 / (r0 + r1) * 1 / 2
-            ratio1 = r1 / (r0 + r1) * 1 / 2
-            pt0 = c1 * ratio0 + c0 * (1 - ratio0)
-            pt1 = c0 * ratio1 + c1 * (1 - ratio1)
-            nbs = [x_id for x_id in all_cycles[key0] if not is_face(x_id)]
-            if (nbs.index(key1) - nbs.index(elt0['prev'])) in [1, -2]:
-                pt0 = c1 + (pt0 - c1) * rot.conjugate()
-                pt1 = c0 + (pt1 - c0) * rot.conjugate()
-            else:
-                pt0 = c1 + (pt0 - c1) * rot
-                pt1 = c0 + (pt1 - c0) * rot
-            return [pt0, pt1]
-        elif r0 + r1 >= max_distance / 5:
-            ratio0 = r0 / (r0 + r1) * 2 / 3
-            ratio1 = r1 / (r0 + r1) * 2 / 3
-            pt0 = c1 * ratio0 + c0 * (1 - ratio0)
-            pt1 = c0 * ratio1 + c1 * (1 - ratio1)
-            return [pt0, pt1]
-        else:
-            ratio = r0 / (r0 + r1)
-            pt = c1 * ratio + c0 * (1 - ratio)
-            return [pt]
-
-    for prev, curr in zip(route, route[1:] + [route[0]]):
-        for pt in add_half_edge(prev, curr):
-            vertices.append((pt.real, pt.imag))
-        if is_vert(curr['id']):
-            curr_id = curr['id']
-            crossings = up_crossings if curr['up'] else down_crossings
-            if curr_id[-2] == '_':
-                curr_id = curr_id[:-2]
-                if prev['id'].startswith(curr_id):
-                    crossings[curr_id] = len(vertices) - 2
-            else:
-                crossings[curr_id] = len(vertices) - 1
-
-    return (vertices, [(down_crossings[v], up_crossings[v]) for v in up_crossings.keys()])
+    return vertices, [(down_crossings[v], up_crossings[v]) for v in up_crossings.keys()]
