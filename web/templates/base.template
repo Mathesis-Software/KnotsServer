@@ -21,14 +21,14 @@
 <nav class="navbar navbar-light ke-header fixed-top">
   <a class="navbar-brand" href="/">
 		<span class="ke-logo"></span>
-		Knot Editor
+		Mathesis Knots
   </a>
 </nav>
 <div id='main' class='main'>
 {% block content %}{% endblock %}
 </div>
 <footer class='footer'>
-	<div class="footer-copyright text-center py-3">Copyright © 2021 <a href='/about'>Knot Editor Project</a></div>
+	<div class="footer-copyright text-center py-3">Copyright © 2021 <a href='/about'>Mathesis Knots Project</a></div>
 </footer>
 </body>
 <script type='text/javascript'>
